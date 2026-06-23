@@ -37,7 +37,7 @@ class BlogMemberEntity(
     @Enumerated(EnumType.STRING)
     var role: MemberRole,
     @CreatedDate
-    val createdAt: LocalDateTime,
+    val createdAt: LocalDateTime = LocalDateTime.now(),
     @Column
     var updatedAt: LocalDateTime?,
     @Column
