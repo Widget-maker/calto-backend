@@ -10,4 +10,14 @@ interface BlogMemberRepository : JpaRepository<BlogMemberEntity, Long> {
     ): BlogMemberEntity?
 
     fun findByBlogId(blogId: Long): List<BlogMemberEntity>
+
+    fun findByBlogIdAndUserId(
+        blogId: Long,
+        userId: Long,
+    ): BlogMemberEntity?
+
+    fun existsByBlogIdAndUserId(
+        blogId: Long,
+        userId: Long,
+    ): Boolean
 }
