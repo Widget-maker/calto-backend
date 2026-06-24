@@ -3,6 +3,7 @@ package kr.app.calto.controller
 import kr.app.calto.controller.dto.request.user.CreateProfileRequest
 import kr.app.calto.controller.dto.request.user.UpdateProfileRequest
 import kr.app.calto.controller.dto.response.ApiResponse
+import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.user.NicknameCheckResponse
 import kr.app.calto.controller.dto.response.user.UserProfileResponse
 import kr.app.calto.service.UserService
@@ -31,8 +32,8 @@ class UserController(
         runCatching {
             userService.completeProfile(userId, createProfileRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @GetMapping("/nickname/check")
@@ -42,8 +43,8 @@ class UserController(
         runCatching {
             userService.isNicknameDuplicated(nickname)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(NicknameCheckResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(NicknameCheckResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @GetMapping("/me")
@@ -53,8 +54,8 @@ class UserController(
         runCatching {
             userService.getMyProfile(userId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(UserProfileResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(UserProfileResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @PutMapping("/me")
@@ -65,8 +66,8 @@ class UserController(
         runCatching {
             userService.updateMyProfile(userId, updateProfileRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @DeleteMapping("/me")
@@ -76,7 +77,7 @@ class UserController(
         runCatching {
             userService.withdraw(userId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 }

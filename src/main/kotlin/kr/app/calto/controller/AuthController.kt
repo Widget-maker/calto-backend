@@ -3,6 +3,7 @@ package kr.app.calto.controller
 import kr.app.calto.controller.dto.request.auth.OAuthCallbackRequest
 import kr.app.calto.controller.dto.request.auth.RefreshTokenRequest
 import kr.app.calto.controller.dto.response.ApiResponse
+import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.auth.AuthTokenResponse
 import kr.app.calto.domain.AuthProvider
 import kr.app.calto.service.AuthService
@@ -26,8 +27,8 @@ class AuthController(
         runCatching {
             authService.handleOAuthCallback(provider, oAuthCallbackRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(AuthTokenResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(AuthTokenResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @PostMapping("/refresh")
@@ -37,8 +38,8 @@ class AuthController(
         runCatching {
             authService.refresh(refreshTokenRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(AuthTokenResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(AuthTokenResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @PostMapping("/logout")
@@ -48,7 +49,7 @@ class AuthController(
         runCatching {
             authService.logout(refreshTokenRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 }
