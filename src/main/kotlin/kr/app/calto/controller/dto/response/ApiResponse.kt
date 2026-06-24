@@ -3,6 +3,7 @@ package kr.app.calto.controller.dto.response
 class ApiResponse<T>(
     val data: T? = null,
     val code: Int,
+    val errorCode: String? = null,
     val message: String,
 ) {
     companion object {
@@ -13,7 +14,13 @@ class ApiResponse<T>(
 
         fun <T> failure(
             code: Int,
+            errorCode: String,
             message: String,
-        ) = ApiResponse<T>(code = code, message = message, data = null)
+        ) = ApiResponse<T>(
+            code = code,
+            errorCode = errorCode,
+            message = message,
+            data = null,
+        )
     }
 }
