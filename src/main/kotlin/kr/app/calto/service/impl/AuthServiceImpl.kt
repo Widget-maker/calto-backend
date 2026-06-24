@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional
 import kr.app.calto.controller.dto.request.auth.OAuthCallbackRequest
 import kr.app.calto.controller.dto.request.auth.RefreshTokenRequest
 import kr.app.calto.domain.AuthProvider
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.RefreshTokenEntity
 import kr.app.calto.infrastructure.oauth.OAuthUserInfoClient
 import kr.app.calto.infrastructure.repository.RefreshTokenRepository
@@ -34,11 +36,11 @@ class AuthServiceImpl(
     override fun refresh(refreshTokenRequest: RefreshTokenRequest): AuthTokenResult {
         val stored =
             refreshTokenRepository.findByToken(refreshTokenRequest.refreshToken)
-                ?: throw IllegalArgumentException("유효하지 않은 refresh token 입니다.")
+                ?: throw CalToException(ErrorCode.REFRESH_TOKEN_INVALID)
 
         if (stored.expiresAt.isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(stored)
-            throw IllegalArgumentException("만료된 refresh token 입니다.")
+            throw CalToException(ErrorCode.REFRESH_TOKEN_EXPIRED)
         }
 
         val userId = jwtProvider.parseUserId(refreshTokenRequest.refreshToken)

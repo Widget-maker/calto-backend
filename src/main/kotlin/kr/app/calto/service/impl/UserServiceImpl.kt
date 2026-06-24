@@ -3,6 +3,8 @@ package kr.app.calto.service.impl
 import kr.app.calto.controller.dto.request.user.CreateProfileRequest
 import kr.app.calto.controller.dto.request.user.UpdateProfileRequest
 import kr.app.calto.domain.User
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.UserEntity
 import kr.app.calto.infrastructure.repository.UserRepository
 import kr.app.calto.service.UserService
@@ -47,7 +49,7 @@ class UserServiceImpl(
         val entity =
             userRepository
                 .findById(userId)
-                .orElseThrow { NoSuchElementException("유저 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
         entity.nickname = createProfileRequest.nickname
         createProfileRequest.profileImageUrl?.let { entity.profileImageUrl = it }
@@ -64,7 +66,7 @@ class UserServiceImpl(
             userRepository
                 .findById(userId)
                 .map { it.toDomain() }
-                .orElseThrow { NoSuchElementException("유저 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
         return user
     }
@@ -76,7 +78,7 @@ class UserServiceImpl(
         val entity =
             userRepository
                 .findById(userId)
-                .orElseThrow { NoSuchElementException("유저 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
         updateProfileRequest.nickname?.let { entity.nickname = it }
         updateProfileRequest.profileImageUrl?.let { entity.profileImageUrl = it }
@@ -90,7 +92,7 @@ class UserServiceImpl(
         val entity =
             userRepository
                 .findById(userId)
-                .orElseThrow { NoSuchElementException("유저 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
         entity.deletedAt = LocalDateTime.now()
         userRepository.save(entity)

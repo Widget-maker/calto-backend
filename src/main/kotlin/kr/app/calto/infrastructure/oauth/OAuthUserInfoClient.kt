@@ -1,6 +1,8 @@
 package kr.app.calto.infrastructure.oauth
 
 import kr.app.calto.domain.AuthProvider
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.service.dto.OAuthUserInfo
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
@@ -23,7 +25,10 @@ class OAuthUserInfoClient(
     ): OAuthUserInfo {
         val registration =
             clientRegistrationRepository.findByRegistrationId(provider.registrationId())
-                ?: throw IllegalStateException("등록되지 않은 OAuth 제공자: ${provider.name}")
+                ?: throw CalToException(
+                    ErrorCode.OAUTH_PROVIDER_NOT_REGISTERED,
+                    "등록되지 않은 OAuth 제공자: ${provider.name}",
+                )
 
         val accessToken = exchangeCodeForAccessToken(registration, code)
         val attributes = fetchUserAttributes(registration, accessToken)
@@ -53,13 +58,13 @@ class OAuthUserInfoClient(
                 .body(body)
                 .retrieve()
                 .body(Map::class.java)
-                ?: throw IllegalStateException("OAuth 토큰 응답이 비어있습니다.")
+                ?: throw CalToException(ErrorCode.OAUTH_AUTH_FAILED, "OAuth 토큰 응답이 비어있습니다.")
 
         @Suppress("UNCHECKED_CAST")
         val response = raw as Map<String, Any?>
 
         return (response["access_token"] as? String)
-            ?: throw IllegalStateException("OAuth 응답에서 access_token을 찾을 수 없습니다.")
+            ?: throw CalToException(ErrorCode.OAUTH_AUTH_FAILED, "OAuth 응답에서 access_token을 찾을 수 없습니다.")
     }
 
     private fun fetchUserAttributes(
@@ -72,7 +77,7 @@ class OAuthUserInfoClient(
                 .header("Authorization", "Bearer $accessToken")
                 .retrieve()
                 .body(Map::class.java)
-                ?: throw IllegalStateException("OAuth 사용자 정보 응답이 비어있습니다.")
+                ?: throw CalToException(ErrorCode.OAUTH_AUTH_FAILED, "OAuth 사용자 정보 응답이 비어있습니다.")
 
         @Suppress("UNCHECKED_CAST")
         return raw as Map<String, Any?>
@@ -91,7 +96,7 @@ class OAuthUserInfoClient(
     private fun mapKakao(attributes: Map<String, Any?>): OAuthUserInfo {
         val providerId =
             (attributes["id"]?.toString())
-                ?: throw IllegalStateException("Kakao 응답에 id가 없습니다.")
+                ?: throw CalToException(ErrorCode.OAUTH_AUTH_FAILED, "Kakao 응답에 id가 없습니다.")
         val kakaoAccount = attributes["kakao_account"] as? Map<String, Any?> ?: emptyMap()
         val profile = kakaoAccount["profile"] as? Map<String, Any?> ?: emptyMap()
         return OAuthUserInfo(
@@ -105,7 +110,7 @@ class OAuthUserInfoClient(
     private fun mapGoogle(attributes: Map<String, Any?>): OAuthUserInfo {
         val providerId =
             (attributes["sub"] as? String)
-                ?: throw IllegalStateException("Google 응답에 sub가 없습니다.")
+                ?: throw CalToException(ErrorCode.OAUTH_AUTH_FAILED, "Google 응답에 sub가 없습니다.")
         return OAuthUserInfo(
             provider = AuthProvider.GOOGLE,
             providerId = providerId,

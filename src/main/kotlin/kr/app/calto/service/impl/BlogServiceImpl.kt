@@ -3,6 +3,8 @@ package kr.app.calto.service.impl
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.domain.BlogColor
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.BlogEntity
 import kr.app.calto.infrastructure.repository.BlogRepository
 import kr.app.calto.service.BlogService
@@ -28,7 +30,7 @@ class BlogServiceImpl(
             blogRepository
                 .findById(id)
                 .map { BlogDetail.from(it.toDomain()) }
-                .orElseThrow { NoSuchElementException("블로그 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
         return blog
     }
@@ -51,7 +53,7 @@ class BlogServiceImpl(
         val entity =
             blogRepository
                 .findById(blogId)
-                .orElseThrow { NoSuchElementException("블로그 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
         updateBlogRequest.name?.let { entity.name = it }
         updateBlogRequest.imageUrl?.let { entity.imageUrl = it }
@@ -65,7 +67,7 @@ class BlogServiceImpl(
         val entity =
             blogRepository
                 .findById(blogId)
-                .orElseThrow { NoSuchElementException("블로그 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
         entity.deletedAt = LocalDateTime.now()
         blogRepository.save(entity)
