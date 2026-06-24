@@ -1,6 +1,7 @@
 package kr.app.calto.controller
 
 import kr.app.calto.controller.dto.response.ApiResponse
+import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.invite.InviteUrlResponse
 import kr.app.calto.service.InviteService
 import org.springframework.http.ResponseEntity
@@ -25,8 +26,8 @@ class InviteController(
         runCatching {
             inviteService.createInviteCode(userId, blogId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(InviteUrlResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(InviteUrlResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @GetMapping
@@ -37,10 +38,8 @@ class InviteController(
         runCatching {
             inviteService.getActiveInviteCode(userId, blogId)
         }.fold(
-            onSuccess = { result ->
-                ResponseEntity.ok(ApiResponse.success<InviteUrlResponse>(result?.let { InviteUrlResponse(it) }))
-            },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(it?.let { InviteUrlResponse(it) }) },
+            onFailure = { Responses.failure(it) },
         )
 
     @DeleteMapping("/{code}")
@@ -52,8 +51,8 @@ class InviteController(
         runCatching {
             inviteService.deleteInviteCode(userId, blogId, code)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @PostMapping("/{code}/join")
@@ -65,7 +64,7 @@ class InviteController(
         runCatching {
             inviteService.joinBlog(userId, blogId, code)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 }

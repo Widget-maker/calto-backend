@@ -2,6 +2,8 @@ package kr.app.calto.service.impl
 
 import jakarta.transaction.Transactional
 import kr.app.calto.domain.MemberRole
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.BlogMemberEntity
 import kr.app.calto.infrastructure.entities.InviteEntity
 import kr.app.calto.infrastructure.repository.BlogMemberRepository
@@ -32,19 +34,22 @@ class InviteServiceImpl(
     ): InviteCreatedResult {
         val caller =
             blogMemberRepository.findByBlogIdAndUserId(blogId, userId)
-                ?: throw IllegalStateException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         if (caller.role != MemberRole.OWNER && caller.role != MemberRole.ADMIN) {
-            throw IllegalStateException("초대 코드 생성 권한 없음")
+            throw CalToException(ErrorCode.INVITE_PERMISSION_DENIED, "초대 코드 생성 권한 없음")
         }
 
         val blog =
             blogRepository
                 .findById(blogId)
-                .orElseThrow { NoSuchElementException("블로그 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
         if (blog.members >= maxMembers) {
-            throw IllegalStateException("블로그 최대 멤버 수(${maxMembers}명) 도달로 초대 코드 생성 불가")
+            throw CalToException(
+                ErrorCode.BLOG_MAX_MEMBERS_REACHED,
+                "블로그 최대 멤버 수(${maxMembers}명) 도달로 초대 코드 생성 불가",
+            )
         }
 
         val existing =
@@ -54,7 +59,7 @@ class InviteServiceImpl(
                 now = LocalDateTime.now(),
             )
         if (existing != null) {
-            throw IllegalStateException("이미 활성화된 초대 코드가 존재합니다. 만료 또는 사용 후 새로 생성할 수 있습니다.")
+            throw CalToException(ErrorCode.INVITE_ALREADY_EXISTS)
         }
 
         val code = UUID.randomUUID().toString().replace("-", "")
@@ -78,10 +83,10 @@ class InviteServiceImpl(
     ): InviteCreatedResult? {
         val caller =
             blogMemberRepository.findByBlogIdAndUserId(blogId, userId)
-                ?: throw IllegalStateException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         if (caller.role != MemberRole.OWNER && caller.role != MemberRole.ADMIN) {
-            throw IllegalStateException("초대 코드 조회 권한 없음")
+            throw CalToException(ErrorCode.INVITE_PERMISSION_DENIED, "초대 코드 조회 권한 없음")
         }
 
         val active =
@@ -106,7 +111,7 @@ class InviteServiceImpl(
             invite.usedUserId != null ||
             invite.expiresAt.isBefore(LocalDateTime.now())
         ) {
-            throw NoSuchElementException("활성 초대 코드 조회 실패")
+            throw CalToException(ErrorCode.INVITE_NOT_FOUND)
         }
 
         inviteRepository.delete(invite)
@@ -119,7 +124,7 @@ class InviteServiceImpl(
     ): InviteCreatedResult =
         InviteCreatedResult(
             inviteUrl = "$inviteBaseUrl/blogs/$blogId/invite/$code",
-            expiresAt = expiresAt,
+            expiresAt = expiresAt.toString(),
         )
 
     override fun joinBlog(
@@ -129,30 +134,33 @@ class InviteServiceImpl(
     ) {
         val invite =
             inviteRepository.findByBlogIdAndCode(blogId, code)
-                ?: throw NoSuchElementException("유효하지 않은 초대 코드")
+                ?: throw CalToException(ErrorCode.INVITE_CODE_INVALID)
 
         if (invite.usedUserId != null) {
-            throw IllegalStateException("이미 사용된 초대 코드")
+            throw CalToException(ErrorCode.INVITE_CODE_USED)
         }
         if (invite.expiresAt.isBefore(LocalDateTime.now())) {
-            throw IllegalStateException("만료된 초대 코드")
+            throw CalToException(ErrorCode.INVITE_CODE_EXPIRED)
         }
         if (blogMemberRepository.existsByBlogIdAndUserId(blogId, userId)) {
-            throw IllegalStateException("이미 가입된 블로그")
+            throw CalToException(ErrorCode.BLOG_ALREADY_JOINED)
         }
 
         val user =
             userRepository
                 .findById(userId)
-                .orElseThrow { NoSuchElementException("유저 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
         val blog =
             blogRepository
                 .findById(blogId)
-                .orElseThrow { NoSuchElementException("블로그 조회 실패") }
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
         if (blog.members >= maxMembers) {
-            throw IllegalStateException("블로그 최대 멤버 수(${maxMembers}명) 도달로 가입 불가")
+            throw CalToException(
+                ErrorCode.BLOG_MAX_MEMBERS_REACHED,
+                "블로그 최대 멤버 수(${maxMembers}명) 도달로 가입 불가",
+            )
         }
 
         blogMemberRepository.save(

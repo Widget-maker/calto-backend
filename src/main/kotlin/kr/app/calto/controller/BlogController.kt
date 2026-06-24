@@ -3,6 +3,7 @@ package kr.app.calto.controller
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.controller.dto.response.ApiResponse
+import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blog.BlogResponse
 import kr.app.calto.service.BlogService
 import org.springframework.http.ResponseEntity
@@ -25,8 +26,8 @@ class BlogController(
         runCatching {
             blogService.getAllBlogs()
         }.fold(
-            onSuccess = { blogs -> ResponseEntity.ok(ApiResponse.success(blogs.map { BlogResponse(it) })) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(it.map { BlogResponse(it) }) },
+            onFailure = { Responses.failure(it) },
         )
 
     @GetMapping("/{blogId}")
@@ -36,8 +37,8 @@ class BlogController(
         runCatching {
             blogService.getBlogById(blogId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(BlogResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(BlogResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @PostMapping
@@ -47,8 +48,8 @@ class BlogController(
         runCatching {
             blogService.createBlog(createBlogRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @PutMapping("/{blogId}")
@@ -59,8 +60,8 @@ class BlogController(
         runCatching {
             blogService.updateBlog(blogId, updateBlogRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @DeleteMapping("/{blogId}")
@@ -70,7 +71,7 @@ class BlogController(
         runCatching {
             blogService.deleteBlog(blogId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 }

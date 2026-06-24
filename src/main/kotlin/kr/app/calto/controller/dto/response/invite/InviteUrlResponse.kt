@@ -8,6 +8,6 @@ class InviteUrlResponse(
 ) {
     constructor(inviteCreatedResult: InviteCreatedResult) : this(
         inviteUrl = inviteCreatedResult.inviteUrl,
-        expiresAt = inviteCreatedResult.expiresAt.toString(),
+        expiresAt = inviteCreatedResult.expiresAt,
     )
 }

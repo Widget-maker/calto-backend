@@ -1,6 +1,8 @@
 package kr.app.calto.service.impl
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
+import kr.app.calto.exception.CalToException
+import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.repository.BlogMemberRepository
 import kr.app.calto.service.BlogMemberService
 import kr.app.calto.service.dto.BlogMemberDetail
@@ -18,7 +20,7 @@ class BlogMemberServiceImpl(
     ): BlogMemberDetail {
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
-                ?: throw NoSuchElementException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         return BlogMemberDetail.from(entity.toDomain())
     }
@@ -37,7 +39,7 @@ class BlogMemberServiceImpl(
     ) {
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
-                ?: throw NoSuchElementException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.role = updatedMemberRoleRequest.role
         entity.updatedAt = LocalDateTime.now()
@@ -52,7 +54,7 @@ class BlogMemberServiceImpl(
     ) {
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
-                ?: throw NoSuchElementException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.deletedAt = LocalDateTime.now()
         blogMemberRepository.save(entity)
@@ -65,7 +67,7 @@ class BlogMemberServiceImpl(
     ) {
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, targetMemberId)
-                ?: throw NoSuchElementException("블로그 멤버 조회 실패")
+                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.deletedAt = LocalDateTime.now()
         blogMemberRepository.save(entity)

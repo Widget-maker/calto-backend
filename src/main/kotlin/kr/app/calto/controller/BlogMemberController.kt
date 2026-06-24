@@ -2,6 +2,7 @@ package kr.app.calto.controller
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
 import kr.app.calto.controller.dto.response.ApiResponse
+import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blogMember.BlogMemberResponse
 import kr.app.calto.service.BlogMemberService
 import org.springframework.http.ResponseEntity
@@ -25,8 +26,8 @@ class BlogMemberController(
         runCatching {
             blogMemberService.getBlogMembers(blogId)
         }.fold(
-            onSuccess = { members -> ResponseEntity.ok(ApiResponse.success(members.map { BlogMemberResponse(it) })) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(it.map { BlogMemberResponse(it) }) },
+            onFailure = { Responses.failure(it) },
         )
 
     @GetMapping("/{blogMemberId}")
@@ -37,8 +38,8 @@ class BlogMemberController(
         runCatching {
             blogMemberService.getBlogMember(blogId, blogMemberId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success(BlogMemberResponse(it))) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success(BlogMemberResponse(it)) },
+            onFailure = { Responses.failure(it) },
         )
 
     @PutMapping("/{blogMemberId}")
@@ -50,8 +51,8 @@ class BlogMemberController(
         runCatching {
             blogMemberService.updateMemberRole(blogId, blogMemberId, updateMemberRoleRequest)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @DeleteMapping("/leave/{blogMemberId}")
@@ -62,8 +63,8 @@ class BlogMemberController(
         runCatching {
             blogMemberService.leaveBlog(blogId, blogMemberId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 
     @DeleteMapping("/delete/{targetMemberId}")
@@ -74,7 +75,7 @@ class BlogMemberController(
         runCatching {
             blogMemberService.deleteBlogMember(blogId, targetMemberId)
         }.fold(
-            onSuccess = { ResponseEntity.ok(ApiResponse.success()) },
-            onFailure = { ResponseEntity.status(400).body(ApiResponse.failure(400, "error")) },
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
         )
 }
