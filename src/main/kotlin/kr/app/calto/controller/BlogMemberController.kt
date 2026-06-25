@@ -6,6 +6,7 @@ import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blogMember.BlogMemberResponse
 import kr.app.calto.service.BlogMemberService
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,10 +22,11 @@ class BlogMemberController(
 ) {
     @GetMapping
     fun getMembers(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
     ): ResponseEntity<ApiResponse<List<BlogMemberResponse>>> =
         runCatching {
-            blogMemberService.getBlogMembers(blogId)
+            blogMemberService.getBlogMembers(userId, blogId)
         }.fold(
             onSuccess = { Responses.success(it.map { BlogMemberResponse(it) }) },
             onFailure = { Responses.failure(it) },
@@ -32,11 +34,12 @@ class BlogMemberController(
 
     @GetMapping("/{blogMemberId}")
     fun getMember(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
         @PathVariable blogMemberId: Long,
     ): ResponseEntity<ApiResponse<BlogMemberResponse>> =
         runCatching {
-            blogMemberService.getBlogMember(blogId, blogMemberId)
+            blogMemberService.getBlogMember(userId, blogId, blogMemberId)
         }.fold(
             onSuccess = { Responses.success(BlogMemberResponse(it)) },
             onFailure = { Responses.failure(it) },
@@ -44,36 +47,40 @@ class BlogMemberController(
 
     @PutMapping("/{blogMemberId}")
     fun updateMemberRole(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
         @PathVariable blogMemberId: Long,
         @RequestBody updateMemberRoleRequest: UpdateMemberRoleRequest,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            blogMemberService.updateMemberRole(blogId, blogMemberId, updateMemberRoleRequest)
+            blogMemberService.updateMemberRole(userId, blogId, blogMemberId, updateMemberRoleRequest)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },
         )
 
-    @DeleteMapping("/leave/{blogMemberId}")
+    // 본인 스스로 leave
+    @DeleteMapping("/me")
     fun leaveBlogMember(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
-        @PathVariable blogMemberId: Long,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            blogMemberService.leaveBlog(blogId, blogMemberId)
+            blogMemberService.leaveBlog(userId, blogId)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },
         )
 
-    @DeleteMapping("/delete/{targetMemberId}")
+    // OWNER의 권한으로 targetMember를 추방
+    @DeleteMapping("/{targetMemberId}")
     fun deleteTargetMember(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
         @PathVariable targetMemberId: Long,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            blogMemberService.deleteBlogMember(blogId, targetMemberId)
+            blogMemberService.deleteBlogMember(userId, blogId, targetMemberId)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },

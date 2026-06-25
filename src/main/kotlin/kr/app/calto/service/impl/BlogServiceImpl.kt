@@ -3,10 +3,12 @@ package kr.app.calto.service.impl
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.domain.BlogColor
+import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
 import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.BlogEntity
 import kr.app.calto.infrastructure.repository.BlogRepository
+import kr.app.calto.service.BlogAuthorizationService
 import kr.app.calto.service.BlogService
 import kr.app.calto.service.dto.BlogDetail
 import org.springframework.stereotype.Service
@@ -15,6 +17,7 @@ import java.time.LocalDateTime
 @Service
 class BlogServiceImpl(
     private val blogRepository: BlogRepository,
+    private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogService {
     override fun getAllBlogs(): List<BlogDetail> {
         val blogs =
@@ -47,9 +50,12 @@ class BlogServiceImpl(
     }
 
     override fun updateBlog(
+        userId: Long,
         blogId: Long,
         updateBlogRequest: UpdateBlogRequest,
     ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
+
         val entity =
             blogRepository
                 .findById(blogId)
@@ -63,7 +69,12 @@ class BlogServiceImpl(
         blogRepository.save(entity)
     }
 
-    override fun deleteBlog(blogId: Long) {
+    override fun deleteBlog(
+        userId: Long,
+        blogId: Long,
+    ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
+
         val entity =
             blogRepository
                 .findById(blogId)
