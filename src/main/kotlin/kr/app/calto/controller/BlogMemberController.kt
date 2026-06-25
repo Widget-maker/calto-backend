@@ -59,7 +59,8 @@ class BlogMemberController(
             onFailure = { Responses.failure(it) },
         )
 
-    @DeleteMapping("/leave/{blogMemberId}")
+    // 본인 스스로 leave
+    @DeleteMapping("/me")
     fun leaveBlogMember(
         @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
@@ -71,7 +72,8 @@ class BlogMemberController(
             onFailure = { Responses.failure(it) },
         )
 
-    @DeleteMapping("/delete/{targetMemberId}")
+    // OWNER의 권한으로 targetMember를 추방
+    @DeleteMapping("/{targetMemberId}")
     fun deleteTargetMember(
         @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
