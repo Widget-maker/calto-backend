@@ -124,6 +124,9 @@ class InviteServiceImpl(
         blogId: Long,
         code: String,
     ) {
+        val now = LocalDateTime.now()
+
+        // 1) 빠른 실패용 사전 검증 (동시성 보장은 아래 CAS 단계에서 수행)
         val invite =
             inviteRepository.findByBlogIdAndCode(blogId, code)
                 ?: throw CalToException(ErrorCode.INVITE_CODE_INVALID)
@@ -131,7 +134,7 @@ class InviteServiceImpl(
         if (invite.usedUserId != null) {
             throw CalToException(ErrorCode.INVITE_CODE_USED)
         }
-        if (invite.expiresAt.isBefore(LocalDateTime.now())) {
+        if (invite.expiresAt.isBefore(now)) {
             throw CalToException(ErrorCode.INVITE_CODE_EXPIRED)
         }
         if (blogMemberRepository.existsByBlogIdAndUserId(blogId, userId)) {
@@ -155,6 +158,13 @@ class InviteServiceImpl(
             )
         }
 
+        // 2) CAS — invite 점유를 원자적으로 처리. 0행이면 다른 트랜잭션이 먼저 차지함
+        val affected = inviteRepository.markUsedIfUnused(invite.id, userId, now)
+        if (affected == 0) {
+            throw CalToException(ErrorCode.INVITE_CODE_USED)
+        }
+
+        // 3) 점유 성공 → BlogMember 생성 + 블로그 멤버 수 갱신
         blogMemberRepository.save(
             BlogMemberEntity(
                 blogId = blogId,
@@ -167,12 +177,8 @@ class InviteServiceImpl(
             ),
         )
 
-        invite.usedUserId = userId
-        invite.usedAt = LocalDateTime.now()
-        inviteRepository.save(invite)
-
         blog.members += 1
-        blog.updatedAt = LocalDateTime.now()
+        blog.updatedAt = now
         blogRepository.save(blog)
     }
 }
