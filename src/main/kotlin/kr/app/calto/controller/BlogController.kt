@@ -1,6 +1,8 @@
 package kr.app.calto.controller
 
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
+import kr.app.calto.controller.dto.request.blog.UpdateBackgroundImageRequest
+import kr.app.calto.controller.dto.request.blog.UpdateBackgroundMainColorRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.controller.dto.response.ApiResponse
 import kr.app.calto.controller.dto.response.Responses
@@ -61,6 +63,32 @@ class BlogController(
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
             blogService.updateBlog(userId, blogId, updateBlogRequest)
+        }.fold(
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
+        )
+
+    @PutMapping("/{blogId}/background/mainColor")
+    fun updateBackgroundMainColor(
+        @AuthenticationPrincipal userId: Long,
+        @PathVariable blogId: Long,
+        @RequestBody updateBackgroundMainColorRequest: UpdateBackgroundMainColorRequest,
+    ): ResponseEntity<ApiResponse<Nothing>> =
+        runCatching {
+            blogService.updateBlogMainColor(userId, blogId, updateBackgroundMainColorRequest)
+        }.fold(
+            onSuccess = { Responses.success() },
+            onFailure = { Responses.failure(it) },
+        )
+
+    @PutMapping("/{blogId}/background/image")
+    fun updateBackgroundImage(
+        @AuthenticationPrincipal userId: Long,
+        @PathVariable blogId: Long,
+        @RequestBody updateBackgroundImageRequest: UpdateBackgroundImageRequest,
+    ): ResponseEntity<ApiResponse<Nothing>> =
+        runCatching {
+            blogService.updateBlogBackgroundImage(userId, blogId, updateBackgroundImageRequest)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },

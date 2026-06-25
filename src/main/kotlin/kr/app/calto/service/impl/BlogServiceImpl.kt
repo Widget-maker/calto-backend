@@ -1,7 +1,10 @@
 package kr.app.calto.service.impl
 
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
+import kr.app.calto.controller.dto.request.blog.UpdateBackgroundImageRequest
+import kr.app.calto.controller.dto.request.blog.UpdateBackgroundMainColorRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
+import kr.app.calto.domain.BackgroundType
 import kr.app.calto.domain.BlogColor
 import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
@@ -63,7 +66,44 @@ class BlogServiceImpl(
 
         updateBlogRequest.name?.let { entity.name = it }
         updateBlogRequest.imageUrl?.let { entity.imageUrl = it }
-        updateBlogRequest.mainColor?.let { entity.mainColor = it }
+        entity.updatedAt = LocalDateTime.now()
+
+        blogRepository.save(entity)
+    }
+
+    override fun updateBlogMainColor(
+        userId: Long,
+        blogId: Long,
+        updateBackgroundMainColorRequest: UpdateBackgroundMainColorRequest,
+    ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
+
+        val entity =
+            blogRepository
+                .findById(blogId)
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
+
+        entity.mainColor = updateBackgroundMainColorRequest.mainColor
+        entity.backgroundType = BackgroundType.COLOR
+        entity.updatedAt = LocalDateTime.now()
+
+        blogRepository.save(entity)
+    }
+
+    override fun updateBlogBackgroundImage(
+        userId: Long,
+        blogId: Long,
+        updateBackgroundImageRequest: UpdateBackgroundImageRequest,
+    ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
+
+        val entity =
+            blogRepository
+                .findById(blogId)
+                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
+
+        entity.backgroundImageUrl = updateBackgroundImageRequest.backgroundImageUrl
+        entity.backgroundType = BackgroundType.IMAGE
         entity.updatedAt = LocalDateTime.now()
 
         blogRepository.save(entity)

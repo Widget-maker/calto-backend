@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import kr.app.calto.domain.BackgroundType
 import kr.app.calto.domain.Blog
 import kr.app.calto.domain.BlogColor
 import org.springframework.data.annotation.CreatedDate
@@ -25,8 +26,6 @@ class BlogEntity(
     val id: Long = 0,
     @Column
     var name: String,
-    // TODO: 배경화면 이미지 사용시 image url 필드 필요,
-    //       제공되는 디폴트 컬러 사용유무 boolean 판단 필드 필요
     @Column
     var members: Int,
     @Column
@@ -34,6 +33,11 @@ class BlogEntity(
     @Column
     @Enumerated(EnumType.STRING)
     var mainColor: BlogColor,
+    @Column
+    var backgroundImageUrl: String? = null,
+    @Column
+    @Enumerated(EnumType.STRING)
+    var backgroundType: BackgroundType = BackgroundType.COLOR,
     @CreatedDate
     val createdAt: LocalDateTime = LocalDateTime.now(),
     @Column
@@ -47,6 +51,8 @@ class BlogEntity(
             imageUrl = imageUrl,
             members = members,
             mainColor = mainColor,
+            backgroundImageUrl = backgroundImageUrl,
+            backgroundType = backgroundType,
             createdAt = createdAt,
             updatedAt = updatedAt,
             deletedAt = deletedAt,
