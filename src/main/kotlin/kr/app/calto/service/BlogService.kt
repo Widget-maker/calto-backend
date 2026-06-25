@@ -12,9 +12,13 @@ interface BlogService {
     fun createBlog(createBlogRequest: CreateBlogRequest)
 
     fun updateBlog(
+        userId: Long,
         blogId: Long,
         updateBlogRequest: UpdateBlogRequest,
     )
 
-    fun deleteBlog(blogId: Long)
+    fun deleteBlog(
+        userId: Long,
+        blogId: Long,
+    )
 }

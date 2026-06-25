@@ -5,24 +5,30 @@ import kr.app.calto.service.dto.BlogMemberDetail
 
 interface BlogMemberService {
     fun getBlogMember(
+        userId: Long,
         blogId: Long,
         blogMemberId: Long,
     ): BlogMemberDetail
 
-    fun getBlogMembers(blogId: Long): List<BlogMemberDetail>
+    fun getBlogMembers(
+        userId: Long,
+        blogId: Long,
+    ): List<BlogMemberDetail>
 
     fun updateMemberRole(
+        userId: Long,
         blogId: Long,
         blogMemberId: Long,
         updatedMemberRoleRequest: UpdateMemberRoleRequest,
     )
 
     fun leaveBlog(
+        userId: Long,
         blogId: Long,
-        blogMemberId: Long,
     )
 
     fun deleteBlogMember(
+        userId: Long,
         blogId: Long,
         targetMemberId: Long,
     )

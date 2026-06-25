@@ -1,9 +1,11 @@
 package kr.app.calto.service.impl
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
+import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
 import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.repository.BlogMemberRepository
+import kr.app.calto.service.BlogAuthorizationService
 import kr.app.calto.service.BlogMemberService
 import kr.app.calto.service.dto.BlogMemberDetail
 import org.springframework.stereotype.Service
@@ -12,12 +14,16 @@ import java.time.LocalDateTime
 @Service
 class BlogMemberServiceImpl(
     private val blogMemberRepository: BlogMemberRepository,
+    private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogMemberService {
     // TODO: 타겟 멤버 정보 확인인지, 본인 정보 확인인지 구분 필요
     override fun getBlogMember(
+        userId: Long,
         blogId: Long,
         blogMemberId: Long,
     ): BlogMemberDetail {
+        blogAuthorizationService.requireMember(blogId, userId)
+
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
@@ -25,21 +31,44 @@ class BlogMemberServiceImpl(
         return BlogMemberDetail.from(entity.toDomain())
     }
 
-    override fun getBlogMembers(blogId: Long): List<BlogMemberDetail> {
-        val members = blogMemberRepository.findByBlogId(blogId)
-            .map { BlogMemberDetail.from(it.toDomain()) }
+    override fun getBlogMembers(
+        userId: Long,
+        blogId: Long,
+    ): List<BlogMemberDetail> {
+        blogAuthorizationService.requireMember(blogId, userId)
+
+        val members =
+            blogMemberRepository
+                .findByBlogId(blogId)
+                .map { BlogMemberDetail.from(it.toDomain()) }
 
         return members
     }
 
     override fun updateMemberRole(
+        userId: Long,
         blogId: Long,
         blogMemberId: Long,
         updatedMemberRoleRequest: UpdateMemberRoleRequest,
     ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
+
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
+
+        if (entity.role == MemberRole.OWNER) {
+            throw CalToException(
+                ErrorCode.BLOG_PERMISSION_DENIED,
+                "OWNER 권한은 변경할 수 없습니다",
+            )
+        }
+        if (updatedMemberRoleRequest.role == MemberRole.OWNER) {
+            throw CalToException(
+                ErrorCode.BLOG_PERMISSION_DENIED,
+                "OWNER 권한으로 변경할 수 없습니다",
+            )
+        }
 
         entity.role = updatedMemberRoleRequest.role
         entity.updatedAt = LocalDateTime.now()
@@ -47,24 +76,23 @@ class BlogMemberServiceImpl(
         blogMemberRepository.save(entity)
     }
 
-    // 본인 스스로 삭제
     override fun leaveBlog(
+        userId: Long,
         blogId: Long,
-        blogMemberId: Long,
     ) {
-        val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
-                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
+        val caller = blogAuthorizationService.requireMember(blogId, userId)
 
-        entity.deletedAt = LocalDateTime.now()
-        blogMemberRepository.save(entity)
+        caller.deletedAt = LocalDateTime.now()
+        blogMemberRepository.save(caller)
     }
 
-    // 다른 권한자에 의해 삭제. targetMemberId 삭제
     override fun deleteBlogMember(
+        userId: Long,
         blogId: Long,
         targetMemberId: Long,
     ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
+
         val entity =
             blogMemberRepository.findByBlogIdAndId(blogId, targetMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)

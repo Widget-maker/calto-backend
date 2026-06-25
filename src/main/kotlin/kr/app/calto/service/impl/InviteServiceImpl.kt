@@ -10,6 +10,7 @@ import kr.app.calto.infrastructure.repository.BlogMemberRepository
 import kr.app.calto.infrastructure.repository.BlogRepository
 import kr.app.calto.infrastructure.repository.InviteRepository
 import kr.app.calto.infrastructure.repository.UserRepository
+import kr.app.calto.service.BlogAuthorizationService
 import kr.app.calto.service.InviteService
 import kr.app.calto.service.dto.InviteCreatedResult
 import org.springframework.beans.factory.annotation.Value
@@ -24,6 +25,7 @@ class InviteServiceImpl(
     private val blogRepository: BlogRepository,
     private val blogMemberRepository: BlogMemberRepository,
     private val userRepository: UserRepository,
+    private val blogAuthorizationService: BlogAuthorizationService,
     @Value("\${app.frontend.invite-base-url}") private val inviteBaseUrl: String,
     @Value("\${app.invite.code-ttl-hours}") private val codeTtlHours: Long,
     @Value("\${app.blog.max-members}") private val maxMembers: Int,
@@ -32,13 +34,7 @@ class InviteServiceImpl(
         userId: Long,
         blogId: Long,
     ): InviteCreatedResult {
-        val caller =
-            blogMemberRepository.findByBlogIdAndUserId(blogId, userId)
-                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
-
-        if (caller.role != MemberRole.OWNER && caller.role != MemberRole.ADMIN) {
-            throw CalToException(ErrorCode.INVITE_PERMISSION_DENIED, "초대 코드 생성 권한 없음")
-        }
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
         val blog =
             blogRepository
@@ -81,13 +77,7 @@ class InviteServiceImpl(
         userId: Long,
         blogId: Long,
     ): InviteCreatedResult? {
-        val caller =
-            blogMemberRepository.findByBlogIdAndUserId(blogId, userId)
-                ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
-
-        if (caller.role != MemberRole.OWNER && caller.role != MemberRole.ADMIN) {
-            throw CalToException(ErrorCode.INVITE_PERMISSION_DENIED, "초대 코드 조회 권한 없음")
-        }
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
         val active =
             inviteRepository.findActiveByCreator(
@@ -104,6 +94,8 @@ class InviteServiceImpl(
         blogId: Long,
         code: String,
     ) {
+        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
+
         val invite = inviteRepository.findByBlogIdAndCode(blogId, code)
 
         if (invite == null ||

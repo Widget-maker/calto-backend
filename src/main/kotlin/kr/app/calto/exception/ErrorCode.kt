@@ -30,6 +30,7 @@ enum class ErrorCode(
     BLOG_NOT_FOUND(404, "블로그를 찾을 수 없습니다"),
     BLOG_MAX_MEMBERS_REACHED(409, "블로그 최대 멤버 수에 도달했습니다"),
     BLOG_ALREADY_JOINED(409, "이미 가입된 블로그입니다"),
+    BLOG_PERMISSION_DENIED(403, "해당 블로그에 대한 권한이 없습니다"),
 
     // BlogMember
     BLOG_MEMBER_NOT_FOUND(404, "블로그 멤버를 찾을 수 없습니다"),
