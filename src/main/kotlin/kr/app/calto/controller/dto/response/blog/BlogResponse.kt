@@ -5,6 +5,7 @@ import kr.app.calto.domain.BlogColor
 import kr.app.calto.service.dto.BlogDetail
 
 class BlogResponse(
+    val id: Long,
     val name: String,
     val imageUrl: String?,
     val members: Int,
@@ -14,6 +15,7 @@ class BlogResponse(
     val createdAt: String,
 ) {
     constructor(blogDetail: BlogDetail) : this(
+        id = blogDetail.id,
         name = blogDetail.name,
         imageUrl = blogDetail.imageUrl,
         members = blogDetail.members,
