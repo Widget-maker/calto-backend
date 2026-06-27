@@ -24,9 +24,11 @@ class BlogController(
     private val blogService: BlogService,
 ) {
     @GetMapping
-    fun getBlogs(): ResponseEntity<ApiResponse<List<BlogResponse>>> =
+    fun getBlogs(
+        @AuthenticationPrincipal userId: Long,
+    ): ResponseEntity<ApiResponse<List<BlogResponse>>> =
         runCatching {
-            blogService.getAllBlogs()
+            blogService.getAllBlogs(userId)
         }.fold(
             onSuccess = { Responses.success(it.map { BlogResponse(it) }) },
             onFailure = { Responses.failure(it) },
@@ -34,10 +36,11 @@ class BlogController(
 
     @GetMapping("/{blogId}")
     fun getBlog(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
     ): ResponseEntity<ApiResponse<BlogResponse>> =
         runCatching {
-            blogService.getBlogById(blogId)
+            blogService.getBlogById(userId, blogId)
         }.fold(
             onSuccess = { Responses.success(BlogResponse(it)) },
             onFailure = { Responses.failure(it) },

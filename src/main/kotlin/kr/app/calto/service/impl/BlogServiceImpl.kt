@@ -22,23 +22,29 @@ class BlogServiceImpl(
     private val blogRepository: BlogRepository,
     private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogService {
-    override fun getAllBlogs(): List<BlogDetail> {
-        val blogs =
-            blogRepository
-                .findAll()
-                .map { BlogDetail.from(it.toDomain()) }
+    override fun getAllBlogs(userId: Long): List<BlogDetail> =
+        blogRepository
+            .findAllByMemberUserId(userId)
+            .map { BlogDetail.from(it.toDomain()) }
 
-        return blogs
-    }
+    // 비소속 사용자는 403 BLOG_PERMISSION_DENIED
+    // 블로그가 delete된 경우는 404 BLOG_NOT_FOUND
+    override fun getBlogById(
+        userId: Long,
+        blogId: Long,
+    ): BlogDetail {
+        blogAuthorizationService.requireMember(blogId, userId)
 
-    override fun getBlogById(id: Long): BlogDetail {
-        val blog =
+        val entity =
             blogRepository
-                .findById(id)
-                .map { BlogDetail.from(it.toDomain()) }
+                .findById(blogId)
                 .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        return blog
+        if (entity.deletedAt != null) {
+            throw CalToException(ErrorCode.BLOG_NOT_FOUND)
+        }
+
+        return BlogDetail.from(entity.toDomain())
     }
 
     override fun createBlog(createBlogRequest: CreateBlogRequest) {

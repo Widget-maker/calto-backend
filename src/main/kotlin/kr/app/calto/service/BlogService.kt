@@ -7,9 +7,12 @@ import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.service.dto.BlogDetail
 
 interface BlogService {
-    fun getAllBlogs(): List<BlogDetail>
+    fun getAllBlogs(userId: Long): List<BlogDetail>
 
-    fun getBlogById(id: Long): BlogDetail
+    fun getBlogById(
+        userId: Long,
+        blogId: Long,
+    ): BlogDetail
 
     fun createBlog(createBlogRequest: CreateBlogRequest)
 

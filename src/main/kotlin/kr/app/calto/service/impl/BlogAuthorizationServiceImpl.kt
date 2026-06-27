@@ -16,7 +16,7 @@ class BlogAuthorizationServiceImpl(
         blogId: Long,
         userId: Long,
     ): BlogMemberEntity =
-        blogMemberRepository.findByBlogIdAndUserId(blogId, userId)
+        blogMemberRepository.findByBlogIdAndUserIdAndDeletedAtIsNull(blogId, userId)
             ?: throw CalToException(
                 ErrorCode.BLOG_PERMISSION_DENIED,
                 "해당 블로그 소속이 아닙니다",
