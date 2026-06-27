@@ -7,6 +7,7 @@ import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.controller.dto.response.ApiResponse
 import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blog.BlogResponse
+import kr.app.calto.controller.dto.response.blog.BlogSummaryResponse
 import kr.app.calto.service.BlogService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -26,11 +27,11 @@ class BlogController(
     @GetMapping
     fun getBlogs(
         @AuthenticationPrincipal userId: Long,
-    ): ResponseEntity<ApiResponse<List<BlogResponse>>> =
+    ): ResponseEntity<ApiResponse<List<BlogSummaryResponse>>> =
         runCatching {
             blogService.getAllBlogs(userId)
         }.fold(
-            onSuccess = { Responses.success(it.map { BlogResponse(it) }) },
+            onSuccess = { Responses.success(it.map { BlogSummaryResponse(it) }) },
             onFailure = { Responses.failure(it) },
         )
 
