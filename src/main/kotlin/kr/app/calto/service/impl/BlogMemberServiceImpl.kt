@@ -25,7 +25,7 @@ class BlogMemberServiceImpl(
         blogAuthorizationService.requireMember(blogId, userId)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         return BlogMemberDetail.from(entity.toDomain())
@@ -39,7 +39,7 @@ class BlogMemberServiceImpl(
 
         val members =
             blogMemberRepository
-                .findByBlogId(blogId)
+                .findByBlogIdAndDeletedAtIsNull(blogId)
                 .map { BlogMemberDetail.from(it.toDomain()) }
 
         return members
@@ -54,7 +54,7 @@ class BlogMemberServiceImpl(
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         if (entity.role == MemberRole.OWNER) {
@@ -94,7 +94,7 @@ class BlogMemberServiceImpl(
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, targetMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, targetMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.deletedAt = LocalDateTime.now()
