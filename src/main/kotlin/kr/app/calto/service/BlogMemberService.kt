@@ -35,6 +35,6 @@ interface BlogMemberService {
     fun deleteBlogMember(
         userId: Long,
         blogId: Long,
-        targetMemberId: Long,
+        blogMemberId: Long,
     )
 }

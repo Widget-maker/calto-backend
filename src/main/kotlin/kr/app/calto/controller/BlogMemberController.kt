@@ -84,15 +84,15 @@ class BlogMemberController(
             onFailure = { Responses.failure(it) },
         )
 
-    // OWNER의 권한으로 targetMember를 추방
-    @DeleteMapping("/{targetMemberId}")
-    fun deleteTargetMember(
+    // OWNER의 권한으로 BlogMember를 추방
+    @DeleteMapping("/{blogMemberId}")
+    fun deleteBlogMember(
         @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
-        @PathVariable targetMemberId: Long,
+        @PathVariable blogMemberId: Long,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            blogMemberService.deleteBlogMember(userId, blogId, targetMemberId)
+            blogMemberService.deleteBlogMember(userId, blogId, blogMemberId)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },

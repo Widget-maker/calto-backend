@@ -96,12 +96,12 @@ class BlogMemberServiceImpl(
     override fun deleteBlogMember(
         userId: Long,
         blogId: Long,
-        targetMemberId: Long,
+        blogMemberId: Long,
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, targetMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.deletedAt = LocalDateTime.now()
