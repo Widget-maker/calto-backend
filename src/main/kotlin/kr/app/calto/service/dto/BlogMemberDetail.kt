@@ -5,6 +5,7 @@ import kr.app.calto.domain.MemberRole
 import java.time.format.DateTimeFormatter
 
 class BlogMemberDetail(
+    val id: Long,
     val name: String,
     val imageUrl: String,
     val comments: String?,
@@ -14,6 +15,7 @@ class BlogMemberDetail(
     companion object {
         fun from(blogMember: BlogMember): BlogMemberDetail =
             BlogMemberDetail(
+                id = blogMember.id,
                 name = blogMember.name,
                 imageUrl = blogMember.imageUrl,
                 comments = blogMember.comments,

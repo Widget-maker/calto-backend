@@ -4,6 +4,7 @@ import kr.app.calto.domain.MemberRole
 import kr.app.calto.service.dto.BlogMemberDetail
 
 class BlogMemberResponse(
+    val id: Long,
     val name: String,
     val imageUrl: String,
     val comments: String?,
@@ -11,6 +12,7 @@ class BlogMemberResponse(
     val joinedAt: String,
 ) {
     constructor(blogMemberDetail: BlogMemberDetail) : this(
+        id = blogMemberDetail.id,
         name = blogMemberDetail.name,
         imageUrl = blogMemberDetail.imageUrl,
         comments = blogMemberDetail.comments,

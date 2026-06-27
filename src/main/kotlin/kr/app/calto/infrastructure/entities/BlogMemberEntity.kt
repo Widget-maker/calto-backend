@@ -45,6 +45,7 @@ class BlogMemberEntity(
 ) {
     fun toDomain() =
         BlogMember(
+            id = id,
             name = name,
             imageUrl = imageUrl,
             comments = comments,
