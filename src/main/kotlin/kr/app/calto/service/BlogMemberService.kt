@@ -15,6 +15,11 @@ interface BlogMemberService {
         blogId: Long,
     ): List<BlogMemberDetail>
 
+    fun getMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+    ): BlogMemberDetail
+
     fun updateMemberRole(
         userId: Long,
         blogId: Long,

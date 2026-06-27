@@ -16,7 +16,6 @@ class BlogMemberServiceImpl(
     private val blogMemberRepository: BlogMemberRepository,
     private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogMemberService {
-    // TODO: 타겟 멤버 정보 확인인지, 본인 정보 확인인지 구분 필요
     override fun getBlogMember(
         userId: Long,
         blogId: Long,
@@ -44,6 +43,14 @@ class BlogMemberServiceImpl(
 
         return members
     }
+
+    override fun getMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+    ): BlogMemberDetail =
+        BlogMemberDetail.from(
+            blogAuthorizationService.requireMember(blogId, userId).toDomain(),
+        )
 
     override fun updateMemberRole(
         userId: Long,

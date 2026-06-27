@@ -32,6 +32,18 @@ class BlogMemberController(
             onFailure = { Responses.failure(it) },
         )
 
+    @GetMapping("/me")
+    fun getMyMemberProfile(
+        @AuthenticationPrincipal userId: Long,
+        @PathVariable blogId: Long,
+    ): ResponseEntity<ApiResponse<BlogMemberResponse>> =
+        runCatching {
+            blogMemberService.getMyMemberProfile(userId, blogId)
+        }.fold(
+            onSuccess = { Responses.success(BlogMemberResponse(it)) },
+            onFailure = { Responses.failure(it) },
+        )
+
     @GetMapping("/{blogMemberId}")
     fun getMember(
         @AuthenticationPrincipal userId: Long,
