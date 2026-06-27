@@ -7,10 +7,10 @@ import kr.app.calto.controller.dto.request.blog.UpdateBlogRequest
 import kr.app.calto.controller.dto.response.ApiResponse
 import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blog.BlogResponse
+import kr.app.calto.controller.dto.response.blog.BlogSummaryResponse
 import kr.app.calto.service.BlogService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,20 +25,23 @@ class BlogController(
     private val blogService: BlogService,
 ) {
     @GetMapping
-    fun getBlogs(): ResponseEntity<ApiResponse<List<BlogResponse>>> =
+    fun getBlogs(
+        @AuthenticationPrincipal userId: Long,
+    ): ResponseEntity<ApiResponse<List<BlogSummaryResponse>>> =
         runCatching {
-            blogService.getAllBlogs()
+            blogService.getAllBlogs(userId)
         }.fold(
-            onSuccess = { Responses.success(it.map { BlogResponse(it) }) },
+            onSuccess = { Responses.success(it.map { BlogSummaryResponse(it) }) },
             onFailure = { Responses.failure(it) },
         )
 
     @GetMapping("/{blogId}")
     fun getBlog(
+        @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
     ): ResponseEntity<ApiResponse<BlogResponse>> =
         runCatching {
-            blogService.getBlogById(blogId)
+            blogService.getBlogById(userId, blogId)
         }.fold(
             onSuccess = { Responses.success(BlogResponse(it)) },
             onFailure = { Responses.failure(it) },
@@ -89,18 +92,6 @@ class BlogController(
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
             blogService.updateBlogBackgroundImage(userId, blogId, updateBackgroundImageRequest)
-        }.fold(
-            onSuccess = { Responses.success() },
-            onFailure = { Responses.failure(it) },
-        )
-
-    @DeleteMapping("/{blogId}")
-    fun delete(
-        @AuthenticationPrincipal userId: Long,
-        @PathVariable blogId: Long,
-    ): ResponseEntity<ApiResponse<Nothing>> =
-        runCatching {
-            blogService.deleteBlog(userId, blogId)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },

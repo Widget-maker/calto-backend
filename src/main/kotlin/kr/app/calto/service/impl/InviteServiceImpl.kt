@@ -137,7 +137,7 @@ class InviteServiceImpl(
         if (invite.expiresAt.isBefore(now)) {
             throw CalToException(ErrorCode.INVITE_CODE_EXPIRED)
         }
-        if (blogMemberRepository.existsByBlogIdAndUserId(blogId, userId)) {
+        if (blogMemberRepository.existsByBlogIdAndUserIdAndDeletedAtIsNull(blogId, userId)) {
             throw CalToException(ErrorCode.BLOG_ALREADY_JOINED)
         }
 

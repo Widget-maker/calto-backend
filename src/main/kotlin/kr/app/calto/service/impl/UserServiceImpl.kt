@@ -87,7 +87,6 @@ class UserServiceImpl(
         userRepository.save(entity)
     }
 
-    // TODO: deletedAt 필터링 필요
     override fun withdraw(userId: Long) {
         val entity =
             userRepository
