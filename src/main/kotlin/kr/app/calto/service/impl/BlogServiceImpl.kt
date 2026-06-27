@@ -108,19 +108,4 @@ class BlogServiceImpl(
 
         blogRepository.save(entity)
     }
-
-    override fun deleteBlog(
-        userId: Long,
-        blogId: Long,
-    ) {
-        blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
-
-        val entity =
-            blogRepository
-                .findById(blogId)
-                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
-
-        entity.deletedAt = LocalDateTime.now()
-        blogRepository.save(entity)
-    }
 }

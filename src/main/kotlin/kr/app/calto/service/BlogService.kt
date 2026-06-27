@@ -30,9 +30,4 @@ interface BlogService {
         blogId: Long,
         updateBackgroundImageRequest: UpdateBackgroundImageRequest,
     )
-
-    fun deleteBlog(
-        userId: Long,
-        blogId: Long,
-    )
 }
