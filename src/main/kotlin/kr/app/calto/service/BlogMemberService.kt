@@ -15,6 +15,11 @@ interface BlogMemberService {
         blogId: Long,
     ): List<BlogMemberDetail>
 
+    fun getMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+    ): BlogMemberDetail
+
     fun updateMemberRole(
         userId: Long,
         blogId: Long,
@@ -30,6 +35,6 @@ interface BlogMemberService {
     fun deleteBlogMember(
         userId: Long,
         blogId: Long,
-        targetMemberId: Long,
+        blogMemberId: Long,
     )
 }

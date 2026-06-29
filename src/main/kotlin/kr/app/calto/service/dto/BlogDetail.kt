@@ -6,6 +6,7 @@ import kr.app.calto.domain.BlogColor
 import java.time.format.DateTimeFormatter
 
 class BlogDetail(
+    val id: Long,
     val name: String,
     val imageUrl: String?,
     val members: Int,
@@ -17,6 +18,7 @@ class BlogDetail(
     companion object {
         fun from(blog: Blog): BlogDetail =
             BlogDetail(
+                id = blog.id,
                 name = blog.name,
                 imageUrl = blog.imageUrl,
                 members = blog.members,

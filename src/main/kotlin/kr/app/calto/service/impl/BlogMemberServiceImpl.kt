@@ -16,7 +16,6 @@ class BlogMemberServiceImpl(
     private val blogMemberRepository: BlogMemberRepository,
     private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogMemberService {
-    // TODO: 타겟 멤버 정보 확인인지, 본인 정보 확인인지 구분 필요
     override fun getBlogMember(
         userId: Long,
         blogId: Long,
@@ -25,7 +24,7 @@ class BlogMemberServiceImpl(
         blogAuthorizationService.requireMember(blogId, userId)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         return BlogMemberDetail.from(entity.toDomain())
@@ -39,11 +38,19 @@ class BlogMemberServiceImpl(
 
         val members =
             blogMemberRepository
-                .findByBlogId(blogId)
+                .findByBlogIdAndDeletedAtIsNull(blogId)
                 .map { BlogMemberDetail.from(it.toDomain()) }
 
         return members
     }
+
+    override fun getMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+    ): BlogMemberDetail =
+        BlogMemberDetail.from(
+            blogAuthorizationService.requireMember(blogId, userId).toDomain(),
+        )
 
     override fun updateMemberRole(
         userId: Long,
@@ -54,7 +61,7 @@ class BlogMemberServiceImpl(
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, blogMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         if (entity.role == MemberRole.OWNER) {
@@ -89,12 +96,12 @@ class BlogMemberServiceImpl(
     override fun deleteBlogMember(
         userId: Long,
         blogId: Long,
-        targetMemberId: Long,
+        blogMemberId: Long,
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
         val entity =
-            blogMemberRepository.findByBlogIdAndId(blogId, targetMemberId)
+            blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
         entity.deletedAt = LocalDateTime.now()
