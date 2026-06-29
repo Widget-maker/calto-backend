@@ -49,10 +49,11 @@ class BlogController(
 
     @PostMapping
     fun create(
+        @AuthenticationPrincipal userId: Long,
         @RequestBody createBlogRequest: CreateBlogRequest,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            blogService.createBlog(createBlogRequest)
+            blogService.createBlog(userId, createBlogRequest)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },

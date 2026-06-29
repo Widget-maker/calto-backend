@@ -25,6 +25,7 @@ enum class ErrorCode(
 
     // User
     USER_NOT_FOUND(404, "유저를 찾을 수 없습니다"),
+    USER_MAX_BLOGS_REACHED(409, "한 사용자가 가질 수 있는 최대 블로그 개수에 도달했습니다"),
 
     // Blog
     BLOG_NOT_FOUND(404, "블로그를 찾을 수 없습니다"),

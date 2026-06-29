@@ -12,15 +12,12 @@ class BlogMemberDetail(
     val role: MemberRole,
     val joinedAt: String,
 ) {
-    companion object {
-        fun from(blogMember: BlogMember): BlogMemberDetail =
-            BlogMemberDetail(
-                id = blogMember.id,
-                name = blogMember.name,
-                imageUrl = blogMember.imageUrl,
-                comments = blogMember.comments,
-                role = blogMember.role,
-                joinedAt = blogMember.createdAt.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
-            )
-    }
+    constructor(blogMember: BlogMember) : this(
+        id = blogMember.id,
+        name = blogMember.name,
+        imageUrl = blogMember.imageUrl,
+        comments = blogMember.comments,
+        role = blogMember.role,
+        joinedAt = blogMember.createdAt.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
+    )
 }

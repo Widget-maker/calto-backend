@@ -29,6 +29,7 @@ class InviteServiceImpl(
     @Value("\${app.frontend.invite-base-url}") private val inviteBaseUrl: String,
     @Value("\${app.invite.code-ttl-hours}") private val codeTtlHours: Long,
     @Value("\${app.blog.max-members}") private val maxMembers: Int,
+    @Value("\${app.blog.max-blogs-per-user}") private val maxBlogsPerUser: Int,
 ) : InviteService {
     override fun createInviteCode(
         userId: Long,
@@ -36,12 +37,12 @@ class InviteServiceImpl(
     ): InviteCreatedResult {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val blog =
-            blogRepository
-                .findById(blogId)
-                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
+        blogRepository
+            .findById(blogId)
+            .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        if (blog.members >= maxMembers) {
+        val currentMemberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blogId)
+        if (currentMemberCount >= maxMembers) {
             throw CalToException(
                 ErrorCode.BLOG_MAX_MEMBERS_REACHED,
                 "블로그 최대 멤버 수(${maxMembers}명) 도달로 초대 코드 생성 불가",
@@ -141,17 +142,25 @@ class InviteServiceImpl(
             throw CalToException(ErrorCode.BLOG_ALREADY_JOINED)
         }
 
+        val currentBlogCount = blogMemberRepository.countByUserIdAndDeletedAtIsNull(userId)
+        if (currentBlogCount >= maxBlogsPerUser) {
+            throw CalToException(
+                ErrorCode.USER_MAX_BLOGS_REACHED,
+                "최대 ${maxBlogsPerUser}개의 블로그까지 소속 가능합니다",
+            )
+        }
+
         val user =
             userRepository
                 .findById(userId)
                 .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
 
-        val blog =
-            blogRepository
-                .findById(blogId)
-                .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
+        blogRepository
+            .findById(blogId)
+            .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        if (blog.members >= maxMembers) {
+        val currentMemberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blogId)
+        if (currentMemberCount >= maxMembers) {
             throw CalToException(
                 ErrorCode.BLOG_MAX_MEMBERS_REACHED,
                 "블로그 최대 멤버 수(${maxMembers}명) 도달로 가입 불가",
@@ -164,7 +173,7 @@ class InviteServiceImpl(
             throw CalToException(ErrorCode.INVITE_CODE_USED)
         }
 
-        // 3) 점유 성공 → BlogMember 생성 + 블로그 멤버 수 갱신
+        // 3) 점유 성공 → BlogMember 생성
         blogMemberRepository.save(
             BlogMemberEntity(
                 blogId = blogId,
@@ -176,9 +185,5 @@ class InviteServiceImpl(
                 deletedAt = null,
             ),
         )
-
-        blog.members += 1
-        blog.updatedAt = now
-        blogRepository.save(blog)
     }
 }
