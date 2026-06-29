@@ -14,7 +14,10 @@ interface BlogService {
         blogId: Long,
     ): BlogDetail
 
-    fun createBlog(createBlogRequest: CreateBlogRequest)
+    fun createBlog(
+        userId: Long,
+        createBlogRequest: CreateBlogRequest,
+    )
 
     fun updateBlog(
         userId: Long,

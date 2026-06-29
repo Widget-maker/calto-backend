@@ -1,5 +1,6 @@
 package kr.app.calto.service.impl
 
+import jakarta.transaction.Transactional
 import kr.app.calto.controller.dto.request.blog.CreateBlogRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBackgroundImageRequest
 import kr.app.calto.controller.dto.request.blog.UpdateBackgroundMainColorRequest
@@ -10,7 +11,10 @@ import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
 import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.BlogEntity
+import kr.app.calto.infrastructure.entities.BlogMemberEntity
+import kr.app.calto.infrastructure.repository.BlogMemberRepository
 import kr.app.calto.infrastructure.repository.BlogRepository
+import kr.app.calto.infrastructure.repository.UserRepository
 import kr.app.calto.service.BlogAuthorizationService
 import kr.app.calto.service.BlogService
 import kr.app.calto.service.dto.BlogDetail
@@ -20,6 +24,8 @@ import java.time.LocalDateTime
 @Service
 class BlogServiceImpl(
     private val blogRepository: BlogRepository,
+    private val blogMemberRepository: BlogMemberRepository,
+    private val userRepository: UserRepository,
     private val blogAuthorizationService: BlogAuthorizationService,
 ) : BlogService {
     override fun getAllBlogs(userId: Long): List<BlogDetail> =
@@ -27,8 +33,6 @@ class BlogServiceImpl(
             .findAllByMemberUserId(userId)
             .map { BlogDetail.from(it.toDomain()) }
 
-    // 비소속 사용자는 403 BLOG_PERMISSION_DENIED
-    // 블로그가 delete된 경우는 404 BLOG_NOT_FOUND
     override fun getBlogById(
         userId: Long,
         blogId: Long,
@@ -47,15 +51,37 @@ class BlogServiceImpl(
         return BlogDetail.from(entity.toDomain())
     }
 
-    override fun createBlog(createBlogRequest: CreateBlogRequest) {
-        val entity =
-            BlogEntity(
-                name = createBlogRequest.name,
-                members = 1,
-                imageUrl = createBlogRequest.imageUrl ?: "default-image.jpg",
-                mainColor = BlogColor.WHITE,
+    @Transactional
+    override fun createBlog(
+        userId: Long,
+        createBlogRequest: CreateBlogRequest,
+    ) {
+        val user =
+            userRepository
+                .findById(userId)
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
+
+        val blog =
+            blogRepository.save(
+                BlogEntity(
+                    name = createBlogRequest.name,
+                    members = 1,
+                    imageUrl = createBlogRequest.imageUrl ?: "default-image.jpg",
+                    mainColor = BlogColor.WHITE,
+                ),
             )
-        blogRepository.save(entity)
+
+        blogMemberRepository.save(
+            BlogMemberEntity(
+                blogId = blog.id,
+                userId = userId,
+                name = user.nickname,
+                imageUrl = user.profileImageUrl ?: "default-profile.jpg",
+                role = MemberRole.OWNER,
+                updatedAt = null,
+                deletedAt = null,
+            ),
+        )
     }
 
     override fun updateBlog(
