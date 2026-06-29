@@ -27,7 +27,7 @@ class BlogMemberServiceImpl(
             blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
-        return BlogMemberDetail.from(entity.toDomain())
+        return BlogMemberDetail(entity.toDomain())
     }
 
     override fun getBlogMembers(
@@ -39,7 +39,7 @@ class BlogMemberServiceImpl(
         val members =
             blogMemberRepository
                 .findByBlogIdAndDeletedAtIsNull(blogId)
-                .map { BlogMemberDetail.from(it.toDomain()) }
+                .map { BlogMemberDetail(it.toDomain()) }
 
         return members
     }
@@ -48,7 +48,7 @@ class BlogMemberServiceImpl(
         userId: Long,
         blogId: Long,
     ): BlogMemberDetail =
-        BlogMemberDetail.from(
+        BlogMemberDetail(
             blogAuthorizationService.requireMember(blogId, userId).toDomain(),
         )
 

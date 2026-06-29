@@ -15,17 +15,14 @@ class BlogDetail(
     val backgroundType: BackgroundType,
     val createdAt: String,
 ) {
-    companion object {
-        fun from(blog: Blog): BlogDetail =
-            BlogDetail(
-                id = blog.id,
-                name = blog.name,
-                imageUrl = blog.imageUrl,
-                members = blog.members,
-                mainColor = blog.mainColor,
-                backgroundImageUrl = blog.backgroundImageUrl,
-                backgroundType = blog.backgroundType,
-                createdAt = blog.createdAt.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
-            )
-    }
+    constructor(blog: Blog, memberCount: Int) : this(
+        id = blog.id,
+        name = blog.name,
+        imageUrl = blog.imageUrl,
+        members = memberCount,
+        mainColor = blog.mainColor,
+        backgroundImageUrl = blog.backgroundImageUrl,
+        backgroundType = blog.backgroundType,
+        createdAt = blog.createdAt.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")),
+    )
 }
