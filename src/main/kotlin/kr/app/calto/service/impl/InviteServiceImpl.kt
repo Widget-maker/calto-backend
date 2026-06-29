@@ -29,6 +29,7 @@ class InviteServiceImpl(
     @Value("\${app.frontend.invite-base-url}") private val inviteBaseUrl: String,
     @Value("\${app.invite.code-ttl-hours}") private val codeTtlHours: Long,
     @Value("\${app.blog.max-members}") private val maxMembers: Int,
+    @Value("\${app.blog.max-blogs-per-user}") private val maxBlogsPerUser: Int,
 ) : InviteService {
     override fun createInviteCode(
         userId: Long,
@@ -139,6 +140,14 @@ class InviteServiceImpl(
         }
         if (blogMemberRepository.existsByBlogIdAndUserIdAndDeletedAtIsNull(blogId, userId)) {
             throw CalToException(ErrorCode.BLOG_ALREADY_JOINED)
+        }
+
+        val currentBlogCount = blogMemberRepository.countByUserIdAndDeletedAtIsNull(userId)
+        if (currentBlogCount >= maxBlogsPerUser) {
+            throw CalToException(
+                ErrorCode.USER_MAX_BLOGS_REACHED,
+                "최대 ${maxBlogsPerUser}개의 블로그까지 소속 가능합니다",
+            )
         }
 
         val user =

@@ -20,4 +20,7 @@ interface BlogMemberRepository : JpaRepository<BlogMemberEntity, Long> {
         blogId: Long,
         userId: Long,
     ): Boolean
+
+    // 활성 상태로 소속된 블로그 멤버 수 (블로그 개수 제약 검증에 사용)
+    fun countByUserIdAndDeletedAtIsNull(userId: Long): Long
 }

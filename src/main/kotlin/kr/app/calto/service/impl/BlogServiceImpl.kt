@@ -18,6 +18,7 @@ import kr.app.calto.infrastructure.repository.UserRepository
 import kr.app.calto.service.BlogAuthorizationService
 import kr.app.calto.service.BlogService
 import kr.app.calto.service.dto.BlogDetail
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -27,6 +28,7 @@ class BlogServiceImpl(
     private val blogMemberRepository: BlogMemberRepository,
     private val userRepository: UserRepository,
     private val blogAuthorizationService: BlogAuthorizationService,
+    @Value("\${app.blog.max-blogs-per-user}") private val maxBlogsPerUser: Int,
 ) : BlogService {
     override fun getAllBlogs(userId: Long): List<BlogDetail> =
         blogRepository
@@ -60,6 +62,14 @@ class BlogServiceImpl(
             userRepository
                 .findById(userId)
                 .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
+
+        val currentBlogCount = blogMemberRepository.countByUserIdAndDeletedAtIsNull(userId)
+        if (currentBlogCount >= maxBlogsPerUser) {
+            throw CalToException(
+                ErrorCode.USER_MAX_BLOGS_REACHED,
+                "최대 ${maxBlogsPerUser}개의 블로그까지 소속 가능합니다",
+            )
+        }
 
         val blog =
             blogRepository.save(
