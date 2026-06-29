@@ -27,8 +27,6 @@ class BlogEntity(
     @Column
     var name: String,
     @Column
-    var members: Int,
-    @Column
     var imageUrl: String,
     @Column
     @Enumerated(EnumType.STRING)
@@ -50,7 +48,6 @@ class BlogEntity(
             id = id,
             name = name,
             imageUrl = imageUrl,
-            members = members,
             mainColor = mainColor,
             backgroundImageUrl = backgroundImageUrl,
             backgroundType = backgroundType,

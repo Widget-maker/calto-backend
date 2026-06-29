@@ -31,9 +31,10 @@ class BlogServiceImpl(
     @Value("\${app.blog.max-blogs-per-user}") private val maxBlogsPerUser: Int,
 ) : BlogService {
     override fun getAllBlogs(userId: Long): List<BlogDetail> =
-        blogRepository
-            .findAllByMemberUserId(userId)
-            .map { BlogDetail.from(it.toDomain()) }
+        blogRepository.findAllByMemberUserId(userId).map { blog ->
+            val memberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blog.id).toInt()
+            BlogDetail(blog.toDomain(), memberCount)
+        }
 
     override fun getBlogById(
         userId: Long,
@@ -50,7 +51,8 @@ class BlogServiceImpl(
             throw CalToException(ErrorCode.BLOG_NOT_FOUND)
         }
 
-        return BlogDetail.from(entity.toDomain())
+        val memberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blogId).toInt()
+        return BlogDetail(entity.toDomain(), memberCount)
     }
 
     @Transactional
@@ -75,7 +77,6 @@ class BlogServiceImpl(
             blogRepository.save(
                 BlogEntity(
                     name = createBlogRequest.name,
-                    members = 1,
                     imageUrl = createBlogRequest.imageUrl ?: "default-image.jpg",
                     mainColor = BlogColor.WHITE,
                 ),
