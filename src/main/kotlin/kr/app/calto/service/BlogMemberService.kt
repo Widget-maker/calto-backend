@@ -21,6 +21,12 @@ interface BlogMemberService {
         blogId: Long,
     ): BlogMemberDetail
 
+    fun isMyNicknameDuplicated(
+        userId: Long,
+        blogId: Long,
+        name: String,
+    ): Boolean
+
     fun updateMyMemberProfile(
         userId: Long,
         blogId: Long,

@@ -35,6 +35,7 @@ enum class ErrorCode(
 
     // BlogMember
     BLOG_MEMBER_NOT_FOUND(404, "블로그 멤버를 찾을 수 없습니다"),
+    BLOG_MEMBER_NAME_DUPLICATED(409, "해당 블로그에서 이미 사용 중인 닉네임입니다"),
 
     // Invite
     INVITE_NOT_FOUND(404, "활성 초대 코드를 찾을 수 없습니다"),

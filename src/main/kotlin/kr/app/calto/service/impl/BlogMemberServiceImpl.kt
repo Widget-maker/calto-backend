@@ -60,12 +60,31 @@ class BlogMemberServiceImpl(
     ) {
         val blogMember = blogAuthorizationService.requireMember(blogId, userId)
 
-        updateMyMemberProfileRequest.name?.let { blogMember.name = it }
+        val newName = updateMyMemberProfileRequest.name
+        if (newName != null && newName != blogMember.name) {
+            if (blogMemberRepository.existsByBlogIdAndNameAndDeletedAtIsNull(blogId, newName)) {
+                throw CalToException(ErrorCode.BLOG_MEMBER_NAME_DUPLICATED)
+            }
+            blogMember.name = newName
+        }
         updateMyMemberProfileRequest.imageUrl?.let { blogMember.imageUrl = it }
         updateMyMemberProfileRequest.comments?.let { blogMember.comments = it }
         blogMember.updatedAt = LocalDateTime.now()
 
         blogMemberRepository.save(blogMember)
+    }
+
+    override fun isMyNicknameDuplicated(
+        userId: Long,
+        blogId: Long,
+        name: String,
+    ): Boolean {
+        val blogMember = blogAuthorizationService.requireMember(blogId, userId)
+        return blogMemberRepository.existsByBlogIdAndNameAndIdNotAndDeletedAtIsNull(
+            blogId,
+            name,
+            blogMember.id,
+        )
     }
 
     override fun updateMemberRole(

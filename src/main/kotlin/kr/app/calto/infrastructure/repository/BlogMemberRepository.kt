@@ -26,4 +26,17 @@ interface BlogMemberRepository : JpaRepository<BlogMemberEntity, Long> {
 
     // 특정 블로그의 멤버 수
     fun countByBlogIdAndDeletedAtIsNull(blogId: Long): Long
+
+    // 해당 블로그 전체 닉네임 중복 검증용
+    fun existsByBlogIdAndNameAndDeletedAtIsNull(
+        blogId: Long,
+        name: String,
+    ): Boolean
+
+    // 해당 블로그 본인을 제외한 닉네임 중복 검증용
+    fun existsByBlogIdAndNameAndIdNotAndDeletedAtIsNull(
+        blogId: Long,
+        name: String,
+        id: Long,
+    ): Boolean
 }
