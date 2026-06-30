@@ -80,14 +80,14 @@ class InviteServiceImpl(
     ): InviteCreatedResult? {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val active =
+        val activeInviteCode =
             inviteRepository.findActiveByCreator(
                 blogId = blogId,
                 userId = userId,
                 now = LocalDateTime.now(),
             ) ?: return null
 
-        return toInviteCreatedResult(blogId, active.code, active.expiresAt)
+        return toInviteCreatedResult(blogId, activeInviteCode.code, activeInviteCode.expiresAt)
     }
 
     override fun deleteInviteCode(
@@ -97,17 +97,17 @@ class InviteServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val invite = inviteRepository.findByBlogIdAndCode(blogId, code)
+        val inviteCode = inviteRepository.findByBlogIdAndCode(blogId, code)
 
-        if (invite == null ||
-            invite.inviteUserId != userId ||
-            invite.usedUserId != null ||
-            invite.expiresAt.isBefore(LocalDateTime.now())
+        if (inviteCode == null ||
+            inviteCode.inviteUserId != userId ||
+            inviteCode.usedUserId != null ||
+            inviteCode.expiresAt.isBefore(LocalDateTime.now())
         ) {
             throw CalToException(ErrorCode.INVITE_NOT_FOUND)
         }
 
-        inviteRepository.delete(invite)
+        inviteRepository.delete(inviteCode)
     }
 
     private fun toInviteCreatedResult(
@@ -128,14 +128,14 @@ class InviteServiceImpl(
         val now = LocalDateTime.now()
 
         // 1) 빠른 실패용 사전 검증 (동시성 보장은 아래 CAS 단계에서 수행)
-        val invite =
+        val inviteCode =
             inviteRepository.findByBlogIdAndCode(blogId, code)
                 ?: throw CalToException(ErrorCode.INVITE_CODE_INVALID)
 
-        if (invite.usedUserId != null) {
+        if (inviteCode.usedUserId != null) {
             throw CalToException(ErrorCode.INVITE_CODE_USED)
         }
-        if (invite.expiresAt.isBefore(now)) {
+        if (inviteCode.expiresAt.isBefore(now)) {
             throw CalToException(ErrorCode.INVITE_CODE_EXPIRED)
         }
         if (blogMemberRepository.existsByBlogIdAndUserIdAndDeletedAtIsNull(blogId, userId)) {
@@ -168,7 +168,7 @@ class InviteServiceImpl(
         }
 
         // 2) CAS — invite 점유를 원자적으로 처리. 0행이면 다른 트랜잭션이 먼저 차지함
-        val affected = inviteRepository.markUsedIfUnused(invite.id, userId, now)
+        val affected = inviteRepository.markUsedIfUnused(inviteCode.id, userId, now)
         if (affected == 0) {
             throw CalToException(ErrorCode.INVITE_CODE_USED)
         }

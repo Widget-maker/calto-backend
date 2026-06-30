@@ -24,11 +24,11 @@ class BlogMemberServiceImpl(
     ): BlogMemberDetail {
         blogAuthorizationService.requireMember(blogId, userId)
 
-        val entity =
+        val targetBlogMember =
             blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
-        return BlogMemberDetail(entity.toDomain())
+        return BlogMemberDetail(targetBlogMember.toDomain())
     }
 
     override fun getBlogMembers(
@@ -76,11 +76,11 @@ class BlogMemberServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
-        val entity =
+        val targetBlogMember =
             blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
-        if (entity.role == MemberRole.OWNER) {
+        if (targetBlogMember.role == MemberRole.OWNER) {
             throw CalToException(
                 ErrorCode.BLOG_PERMISSION_DENIED,
                 "OWNER 권한은 변경할 수 없습니다",
@@ -93,20 +93,20 @@ class BlogMemberServiceImpl(
             )
         }
 
-        entity.role = updatedMemberRoleRequest.role
-        entity.updatedAt = LocalDateTime.now()
+        targetBlogMember.role = updatedMemberRoleRequest.role
+        targetBlogMember.updatedAt = LocalDateTime.now()
 
-        blogMemberRepository.save(entity)
+        blogMemberRepository.save(targetBlogMember)
     }
 
     override fun leaveBlog(
         userId: Long,
         blogId: Long,
     ) {
-        val caller = blogAuthorizationService.requireMember(blogId, userId)
+        val blogMember = blogAuthorizationService.requireMember(blogId, userId)
 
-        caller.deletedAt = LocalDateTime.now()
-        blogMemberRepository.save(caller)
+        blogMember.deletedAt = LocalDateTime.now()
+        blogMemberRepository.save(blogMember)
     }
 
     override fun deleteBlogMember(
@@ -116,11 +116,11 @@ class BlogMemberServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
-        val entity =
+        val targetBlogMember =
             blogMemberRepository.findByBlogIdAndIdAndDeletedAtIsNull(blogId, blogMemberId)
                 ?: throw CalToException(ErrorCode.BLOG_MEMBER_NOT_FOUND)
 
-        entity.deletedAt = LocalDateTime.now()
-        blogMemberRepository.save(entity)
+        targetBlogMember.deletedAt = LocalDateTime.now()
+        blogMemberRepository.save(targetBlogMember)
     }
 }
