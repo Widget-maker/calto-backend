@@ -1,6 +1,7 @@
 package kr.app.calto.controller
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
+import kr.app.calto.controller.dto.request.blogMember.UpdateMyMemberProfileRequest
 import kr.app.calto.controller.dto.response.ApiResponse
 import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.blogMember.BlogMemberResponse
@@ -54,6 +55,19 @@ class BlogMemberController(
             blogMemberService.getBlogMember(userId, blogId, blogMemberId)
         }.fold(
             onSuccess = { Responses.success(BlogMemberResponse(it)) },
+            onFailure = { Responses.failure(it) },
+        )
+
+    @PutMapping("/me")
+    fun updateMyMemberProfile(
+        @AuthenticationPrincipal userId: Long,
+        @PathVariable blogId: Long,
+        @RequestBody updateMyMemberProfileRequest: UpdateMyMemberProfileRequest,
+    ): ResponseEntity<ApiResponse<Nothing>> =
+        runCatching {
+            blogMemberService.updateMyMemberProfile(userId, blogId, updateMyMemberProfileRequest)
+        }.fold(
+            onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },
         )
 

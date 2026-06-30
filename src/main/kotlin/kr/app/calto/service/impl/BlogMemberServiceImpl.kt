@@ -1,6 +1,7 @@
 package kr.app.calto.service.impl
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
+import kr.app.calto.controller.dto.request.blogMember.UpdateMyMemberProfileRequest
 import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
 import kr.app.calto.exception.ErrorCode
@@ -51,6 +52,21 @@ class BlogMemberServiceImpl(
         BlogMemberDetail(
             blogAuthorizationService.requireMember(blogId, userId).toDomain(),
         )
+
+    override fun updateMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+        updateMyMemberProfileRequest: UpdateMyMemberProfileRequest,
+    ) {
+        val blogMember = blogAuthorizationService.requireMember(blogId, userId)
+
+        updateMyMemberProfileRequest.name?.let { blogMember.name = it }
+        updateMyMemberProfileRequest.imageUrl?.let { blogMember.imageUrl = it }
+        updateMyMemberProfileRequest.comments?.let { blogMember.comments = it }
+        blogMember.updatedAt = LocalDateTime.now()
+
+        blogMemberRepository.save(blogMember)
+    }
 
     override fun updateMemberRole(
         userId: Long,
