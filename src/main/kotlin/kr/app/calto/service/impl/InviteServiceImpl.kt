@@ -1,11 +1,13 @@
 package kr.app.calto.service.impl
 
 import jakarta.transaction.Transactional
+import kr.app.calto.controller.dto.request.invite.JoinBlogRequest
 import kr.app.calto.domain.MemberRole
 import kr.app.calto.exception.CalToException
 import kr.app.calto.exception.ErrorCode
 import kr.app.calto.infrastructure.entities.BlogMemberEntity
 import kr.app.calto.infrastructure.entities.InviteEntity
+import kr.app.calto.infrastructure.entities.UserEntity
 import kr.app.calto.infrastructure.repository.BlogMemberRepository
 import kr.app.calto.infrastructure.repository.BlogRepository
 import kr.app.calto.infrastructure.repository.InviteRepository
@@ -49,6 +51,7 @@ class InviteServiceImpl(
             )
         }
 
+        // TODO: find 대신 exist 전환 검토 필요
         val existing =
             inviteRepository.findActiveByCreator(
                 blogId = blogId,
@@ -80,14 +83,14 @@ class InviteServiceImpl(
     ): InviteCreatedResult? {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val active =
+        val activeInviteCode =
             inviteRepository.findActiveByCreator(
                 blogId = blogId,
                 userId = userId,
                 now = LocalDateTime.now(),
             ) ?: return null
 
-        return toInviteCreatedResult(blogId, active.code, active.expiresAt)
+        return toInviteCreatedResult(blogId, activeInviteCode.code, activeInviteCode.expiresAt)
     }
 
     override fun deleteInviteCode(
@@ -97,17 +100,17 @@ class InviteServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val invite = inviteRepository.findByBlogIdAndCode(blogId, code)
+        val inviteCode = inviteRepository.findByBlogIdAndCode(blogId, code)
 
-        if (invite == null ||
-            invite.inviteUserId != userId ||
-            invite.usedUserId != null ||
-            invite.expiresAt.isBefore(LocalDateTime.now())
+        if (inviteCode == null ||
+            inviteCode.inviteUserId != userId ||
+            inviteCode.usedUserId != null ||
+            inviteCode.expiresAt.isBefore(LocalDateTime.now())
         ) {
             throw CalToException(ErrorCode.INVITE_NOT_FOUND)
         }
 
-        inviteRepository.delete(invite)
+        inviteRepository.delete(inviteCode)
     }
 
     private fun toInviteCreatedResult(
@@ -124,24 +127,80 @@ class InviteServiceImpl(
         userId: Long,
         blogId: Long,
         code: String,
+        joinBlogRequest: JoinBlogRequest,
     ) {
         val now = LocalDateTime.now()
 
-        // 1) 빠른 실패용 사전 검증 (동시성 보장은 아래 CAS 단계에서 수행)
-        val invite =
-            inviteRepository.findByBlogIdAndCode(blogId, code)
-                ?: throw CalToException(ErrorCode.INVITE_CODE_INVALID)
+        val inviteCode = checkInviteCode(blogId, code, now)
+        val user = checkUser(userId, blogId)
+        checkBlog(blogId)
 
-        if (invite.usedUserId != null) {
+        //  useUserProfile = true : OAuth 프로필(닉네임, 이미지) 그대로 사용 (name 무시)
+        //  useUserProfile = false : 사용자가 name 직접 입력, imageUrl 은 default
+        val (name, imageUrl) =
+            if (joinBlogRequest.useUserProfile) {
+                user.nickname to (user.profileImageUrl ?: "default-profile.jpg")
+            } else {
+                joinBlogRequest.name to "default-profile.jpg"
+            }
+
+        checkNickname(blogId, name)
+
+        // CAS — invite 점유를 원자적으로 처리. 0행이면 다른 트랜잭션이 먼저 차지함
+        val affected = inviteRepository.markUsedIfUnused(inviteCode.id, userId, now)
+        if (affected == 0) {
             throw CalToException(ErrorCode.INVITE_CODE_USED)
         }
-        if (invite.expiresAt.isBefore(now)) {
+
+        blogMemberRepository.save(
+            BlogMemberEntity(
+                blogId = blogId,
+                userId = userId,
+                name = name,
+                imageUrl = imageUrl,
+                comments = null,
+                role = MemberRole.MEMBER,
+                updatedAt = null,
+                deletedAt = null,
+            ),
+        )
+    }
+
+    private fun checkInviteCode(
+        blogId: Long,
+        code: String,
+        now: LocalDateTime,
+    ): InviteEntity {
+        // 초대 코드 존재 검증
+        val inviteCode =
+            inviteRepository.findByBlogIdAndCode(blogId, code)
+                ?: throw CalToException(ErrorCode.INVITE_CODE_INVALID)
+        // 초대 코드 사용 여부 검증
+        if (inviteCode.usedUserId != null) {
+            throw CalToException(ErrorCode.INVITE_CODE_USED)
+        }
+        // 초대 코드 만료 검증
+        if (inviteCode.expiresAt.isBefore(now)) {
             throw CalToException(ErrorCode.INVITE_CODE_EXPIRED)
         }
+        return inviteCode
+    }
+
+    private fun checkUser(
+        userId: Long,
+        blogId: Long,
+    ): UserEntity {
+        // user 존재 검증
+        val user =
+            userRepository
+                .findById(userId)
+                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
+
+        // 이미 블로그 멤버에 속한 상태인지 검증
         if (blogMemberRepository.existsByBlogIdAndUserIdAndDeletedAtIsNull(blogId, userId)) {
             throw CalToException(ErrorCode.BLOG_ALREADY_JOINED)
         }
-
+        // 인당 최대 블로그 수 검증
         val currentBlogCount = blogMemberRepository.countByUserIdAndDeletedAtIsNull(userId)
         if (currentBlogCount >= maxBlogsPerUser) {
             throw CalToException(
@@ -149,16 +208,15 @@ class InviteServiceImpl(
                 "최대 ${maxBlogsPerUser}개의 블로그까지 소속 가능합니다",
             )
         }
+        return user
+    }
 
-        val user =
-            userRepository
-                .findById(userId)
-                .orElseThrow { CalToException(ErrorCode.USER_NOT_FOUND) }
-
+    private fun checkBlog(blogId: Long) {
+        // blog 존재 검증
         blogRepository
             .findById(blogId)
             .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
-
+        // 최대 멤버 수 검증
         val currentMemberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blogId)
         if (currentMemberCount >= maxMembers) {
             throw CalToException(
@@ -166,24 +224,14 @@ class InviteServiceImpl(
                 "블로그 최대 멤버 수(${maxMembers}명) 도달로 가입 불가",
             )
         }
+    }
 
-        // 2) CAS — invite 점유를 원자적으로 처리. 0행이면 다른 트랜잭션이 먼저 차지함
-        val affected = inviteRepository.markUsedIfUnused(invite.id, userId, now)
-        if (affected == 0) {
-            throw CalToException(ErrorCode.INVITE_CODE_USED)
+    private fun checkNickname(
+        blogId: Long,
+        name: String,
+    ) {
+        if (blogMemberRepository.existsByBlogIdAndNameAndDeletedAtIsNull(blogId, name)) {
+            throw CalToException(ErrorCode.BLOG_MEMBER_NAME_DUPLICATED)
         }
-
-        // 3) 점유 성공 → BlogMember 생성
-        blogMemberRepository.save(
-            BlogMemberEntity(
-                blogId = blogId,
-                userId = userId,
-                name = user.nickname,
-                imageUrl = user.profileImageUrl ?: "default-profile.jpg",
-                role = MemberRole.MEMBER,
-                updatedAt = null,
-                deletedAt = null,
-            ),
-        )
     }
 }

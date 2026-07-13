@@ -1,6 +1,7 @@
 package kr.app.calto.service
 
 import kr.app.calto.controller.dto.request.blogMember.UpdateMemberRoleRequest
+import kr.app.calto.controller.dto.request.blogMember.UpdateMyMemberProfileRequest
 import kr.app.calto.service.dto.BlogMemberDetail
 
 interface BlogMemberService {
@@ -19,6 +20,18 @@ interface BlogMemberService {
         userId: Long,
         blogId: Long,
     ): BlogMemberDetail
+
+    fun isMyNicknameDuplicated(
+        userId: Long,
+        blogId: Long,
+        name: String,
+    ): Boolean
+
+    fun updateMyMemberProfile(
+        userId: Long,
+        blogId: Long,
+        updateMyMemberProfileRequest: UpdateMyMemberProfileRequest,
+    )
 
     fun updateMemberRole(
         userId: Long,

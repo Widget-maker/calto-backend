@@ -42,17 +42,17 @@ class BlogServiceImpl(
     ): BlogDetail {
         blogAuthorizationService.requireMember(blogId, userId)
 
-        val entity =
+        val targetBlog =
             blogRepository
                 .findById(blogId)
                 .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        if (entity.deletedAt != null) {
+        if (targetBlog.deletedAt != null) {
             throw CalToException(ErrorCode.BLOG_NOT_FOUND)
         }
 
         val memberCount = blogMemberRepository.countByBlogIdAndDeletedAtIsNull(blogId).toInt()
-        return BlogDetail(entity.toDomain(), memberCount)
+        return BlogDetail(targetBlog.toDomain(), memberCount)
     }
 
     @Transactional
@@ -102,16 +102,16 @@ class BlogServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER)
 
-        val entity =
+        val blog =
             blogRepository
                 .findById(blogId)
                 .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        updateBlogRequest.name?.let { entity.name = it }
-        updateBlogRequest.imageUrl?.let { entity.imageUrl = it }
-        entity.updatedAt = LocalDateTime.now()
+        updateBlogRequest.name?.let { blog.name = it }
+        updateBlogRequest.imageUrl?.let { blog.imageUrl = it }
+        blog.updatedAt = LocalDateTime.now()
 
-        blogRepository.save(entity)
+        blogRepository.save(blog)
     }
 
     override fun updateBlogMainColor(
@@ -121,16 +121,16 @@ class BlogServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val entity =
+        val blog =
             blogRepository
                 .findById(blogId)
                 .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        entity.mainColor = updateBackgroundMainColorRequest.mainColor
-        entity.backgroundType = BackgroundType.COLOR
-        entity.updatedAt = LocalDateTime.now()
+        blog.mainColor = updateBackgroundMainColorRequest.mainColor
+        blog.backgroundType = BackgroundType.COLOR
+        blog.updatedAt = LocalDateTime.now()
 
-        blogRepository.save(entity)
+        blogRepository.save(blog)
     }
 
     override fun updateBlogBackgroundImage(
@@ -140,15 +140,15 @@ class BlogServiceImpl(
     ) {
         blogAuthorizationService.requireRole(blogId, userId, MemberRole.OWNER, MemberRole.ADMIN)
 
-        val entity =
+        val blog =
             blogRepository
                 .findById(blogId)
                 .orElseThrow { CalToException(ErrorCode.BLOG_NOT_FOUND) }
 
-        entity.backgroundImageUrl = updateBackgroundImageRequest.backgroundImageUrl
-        entity.backgroundType = BackgroundType.IMAGE
-        entity.updatedAt = LocalDateTime.now()
+        blog.backgroundImageUrl = updateBackgroundImageRequest.backgroundImageUrl
+        blog.backgroundType = BackgroundType.IMAGE
+        blog.updatedAt = LocalDateTime.now()
 
-        blogRepository.save(entity)
+        blogRepository.save(blog)
     }
 }

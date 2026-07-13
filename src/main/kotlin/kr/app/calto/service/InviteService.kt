@@ -1,5 +1,6 @@
 package kr.app.calto.service
 
+import kr.app.calto.controller.dto.request.invite.JoinBlogRequest
 import kr.app.calto.service.dto.InviteCreatedResult
 
 interface InviteService {
@@ -23,5 +24,6 @@ interface InviteService {
         userId: Long,
         blogId: Long,
         code: String,
+        joinBlogRequest: JoinBlogRequest,
     )
 }

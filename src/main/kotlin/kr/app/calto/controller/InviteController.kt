@@ -1,5 +1,6 @@
 package kr.app.calto.controller
 
+import kr.app.calto.controller.dto.request.invite.JoinBlogRequest
 import kr.app.calto.controller.dto.response.ApiResponse
 import kr.app.calto.controller.dto.response.Responses
 import kr.app.calto.controller.dto.response.invite.InviteUrlResponse
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -60,9 +62,10 @@ class InviteController(
         @AuthenticationPrincipal userId: Long,
         @PathVariable blogId: Long,
         @PathVariable code: String,
+        @RequestBody joinBlogRequest: JoinBlogRequest,
     ): ResponseEntity<ApiResponse<Nothing>> =
         runCatching {
-            inviteService.joinBlog(userId, blogId, code)
+            inviteService.joinBlog(userId, blogId, code, joinBlogRequest)
         }.fold(
             onSuccess = { Responses.success() },
             onFailure = { Responses.failure(it) },
