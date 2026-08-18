@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: calto-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: calto
+      MYSQL_USER: calto
+      MYSQL_PASSWORD: calto1234
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      # 로컬 MySQL(3306)과 충돌하지 않도록 13306 사용
+      - "13306:3306"
+    volumes:
+      - calto-mysql-data:/var/lib/mysql
+      # 최초 기동(빈 볼륨) 시에만 스키마 + 더미 데이터 자동 적재
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ucalto", "-pcalto1234"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  app:
+    build: .
+    container_name: calto-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Asia/Seoul
+      # DB (스키마는 mysql 컨테이너 init 스크립트가 생성하므로 ddl-auto 불필요)
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/calto?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: calto
+      SPRING_DATASOURCE_PASSWORD: calto1234
+      # JWT (로컬 전용 시크릿 — docker-local-run.md 의 개발용 토큰과 짝임, 변경 금지)
+      JWT_SECRET: calto-local-dev-jwt-secret-key-0123456789abcdef
+      JWT_ACCESSTOKENEXPIRATIONMS: "3600000"
+      JWT_REFRESHTOKENEXPIRATIONMS: "1209600000"
+      # 앱 필수 설정값
+      APP_FRONTEND_INVITE_BASE_URL: http://localhost:3000/invite
+      APP_INVITE_CODE_TTL_HOURS: "24"
+      APP_BLOG_MAX_MEMBERS: "10"
+      APP_BLOG_MAX_BLOGS_PER_USER: "5"
+      # 카카오/구글 실제 로그인이 필요하면 아래 주석 해제 후 키 입력
+      # (없어도 앱은 정상 동작, /auth/oauth2/** 만 OAUTH_PROVIDER_NOT_REGISTERED 반환)
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_CLIENTID: 카카오-REST-API-키
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_REDIRECTURI: http://localhost:3000/oauth/kakao/callback
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KAKAO_AUTHORIZATIONGRANTTYPE: authorization_code
+      # SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KAKAO_AUTHORIZATIONURI: https://kauth.kakao.com/oauth/authorize
+      # SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KAKAO_TOKENURI: https://kauth.kakao.com/oauth/token
+      # SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KAKAO_USERINFOURI: https://kapi.kakao.com/v2/user/me
+      # SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KAKAO_USERNAMEATTRIBUTE: id
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENTID: 구글-클라이언트-ID
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENTSECRET: 구글-시크릿
+      # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECTURI: http://localhost:3000/oauth/google/callback
+
+volumes:
+  calto-mysql-data:
